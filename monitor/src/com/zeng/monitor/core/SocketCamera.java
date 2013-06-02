@@ -1,10 +1,15 @@
 package com.zeng.monitor.core;
 
+import java.io.EOFException;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+
+import org.apache.http.conn.EofSensorInputStream;
 
 
 import android.graphics.Bitmap;
@@ -120,6 +125,20 @@ public class SocketCamera implements CameraSource {
 			socket.connect(new InetSocketAddress(address, port),SOCKET_TIMEOUT);
 
 			InputStream in = socket.getInputStream();
+			
+			byte[] byte_Buffer = new byte[1024] ;
+			int int_BufferSize ;
+			
+			while ((int_BufferSize = in.read(byte_Buffer)) != -1)
+			{
+				String string_Buffer = "" ;
+				
+				for (int i = 0 ;i < byte_Buffer.length; ++i) {
+					string_Buffer += (char)byte_Buffer[i]; 
+				}
+				Log.v("SocketCamera", string_Buffer,null);
+				//Log.v("SocketCamer", byte_Buffer, null) ;
+			}
 			Bitmap bitmap = BitmapFactory.decodeStream(in);
 			if (bounds.right == bitmap.getWidth()
 					&& bounds.bottom == bitmap.getHeight()) {
@@ -132,10 +151,17 @@ public class SocketCamera implements CameraSource {
 		} catch (RuntimeException e) {
 			Log.i(LOG_TAG, "Failed to obtain image over network", e);
 			return false;
+		} catch(EOFException e) {
+			e.printStackTrace() ;
+			return false ;
+		} catch(FileNotFoundException e){
+			e.printStackTrace() ;
+			return false ;
 		} catch (IOException e) {
 			e.printStackTrace();
 
 			return false;
+
 		} finally {
 			if (fos != null) {
 				try {
